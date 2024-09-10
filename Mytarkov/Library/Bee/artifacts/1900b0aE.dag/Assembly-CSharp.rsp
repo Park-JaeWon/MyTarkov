@@ -327,8 +327,19 @@
 -r:"C:/Program Files/Unity/Hub/Editor/2022.3.31f1/Editor/Data/NetStandard/ref/2.1.0/netstandard.dll"
 -analyzer:"C:/Program Files/Unity/Hub/Editor/2022.3.31f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll"
 -analyzer:"C:/Program Files/Unity/Hub/Editor/2022.3.31f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Demo_Scene_Components/Scripts/DebrisScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Demo_Scene_Components/Scripts/ExplosiveBarrelScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Demo_Scene_Components/Scripts/TargetScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/Bullet/BulletScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/Casings_&_Projectiles/CasingScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/Casings_&_Projectiles/GrenadeScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/Explosions_&_Impacts/ExplosionScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/Explosions_&_Impacts/ImpactScript.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/FPSController/FpsControllerLPFP.cs"
+"Assets/Assets/Low Poly FPS Pack - Free (Sample)/Components/Scripts/Misc/LookAtCamera.cs"
 "Assets/Scripts/Player/PlayerLook.cs"
 "Assets/Scripts/Player/PlayerMovement.cs"
+"Assets/Scripts/Weapon/WeaponAssaultRifle.cs"
 -langversion:9.0
 /deterministic
 /optimize+
