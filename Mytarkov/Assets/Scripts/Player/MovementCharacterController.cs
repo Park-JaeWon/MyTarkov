@@ -11,7 +11,7 @@ public class MovementCharacterController : MonoBehaviour
     private float jumpForce; //점프 힘
     [SerializeField]
     private float gravity; //중력 계수
-
+    
     public float MoveSpeed
     {
         set => moveSpeed = Mathf.Max(0, value);//음수 X

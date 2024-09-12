@@ -19,8 +19,7 @@ public class PlayerAnimatorController : MonoBehaviour
 
     public void Play(string stateName, int layer, float normalizedTime)
     {
-        ani
-            mator.Play(stateName, layer, normalizedTime);
+        animator.Play(stateName, layer, normalizedTime);
     }
 
 }
