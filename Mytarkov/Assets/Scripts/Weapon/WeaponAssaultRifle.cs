@@ -1,8 +1,14 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
+[System.Serializable]
+public class AmmoEvent : UnityEvent<int, int> { }
 public class WeaponAssaultRifle : MonoBehaviour
 {
+    [HideInInspector]
+    public AmmoEvent onAmmoEvent = new AmmoEvent();
+
     [Header("Fire Effects")]
     [SerializeField]
     private GameObject muzzleFlashEffect; //총구 이펙트
@@ -26,6 +32,10 @@ public class WeaponAssaultRifle : MonoBehaviour
     private AudioSource audioSource; //사운드 재생 컴포넌트
     private PlayerAnimatorController animator; //애니메이션 재생 제어
     private CasingMemoryPool casingMemoryPool; //탄피 생성 후 활성/비활성 관리
+
+    //외부에서 필요한 정보를 열람하기 위해 정의한 Get Property
+    public WeaponName WeaponName => weaponSetting.weaponName;
+
     private void Awake()
     {
         audioSource = GetComponent<AudioSource>();
@@ -40,6 +50,8 @@ public class WeaponAssaultRifle : MonoBehaviour
     {
         PlaySound(audioClipTakeOutWeapon);
         muzzleFlashEffect.SetActive(false);
+        //무기가 활성화될 때 해당 무기의 탄 수 정보를 갱신한다.
+        onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
     }
 
     public void StartWeaponAction(int type = 0)
@@ -96,7 +108,9 @@ public class WeaponAssaultRifle : MonoBehaviour
             {
                 return;
             }
+
             weaponSetting.currentAmmo--;
+            onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
 
             animator.Play("Fire", -1, 0);
             StartCoroutine("OnMuzzleFlashEffect");
