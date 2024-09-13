@@ -31,6 +31,9 @@ public class WeaponAssaultRifle : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
         animator = GetComponentInParent<PlayerAnimatorController>();
         casingMemoryPool = GetComponent<CasingMemoryPool>();
+
+        //시작시 최대 탄수로 설정
+        weaponSetting.currentAmmo = weaponSetting.maxAmmo;
     }
 
     private void OnEnable()
@@ -87,6 +90,13 @@ public class WeaponAssaultRifle : MonoBehaviour
             }
             //공격주기 체크를 위해 현재시간 저장
             lastAttackTime = Time.time;
+
+            //탄 수가 없으면 공격 불가능
+            if(weaponSetting.currentAmmo <= 0)
+            {
+                return;
+            }
+            weaponSetting.currentAmmo--;
 
             animator.Play("Fire", -1, 0);
             StartCoroutine("OnMuzzleFlashEffect");
