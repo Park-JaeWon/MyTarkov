@@ -7,17 +7,19 @@ public class PlayerController : MonoBehaviour
     private KeyCode keyCodeRun = KeyCode.LeftShift; //달리기 키
     [SerializeField]
     private KeyCode keyCodeJump = KeyCode.Space; //점프 키
+    [SerializeField]
+    private KeyCode keyCodeReload = KeyCode.R; //재장전 키
 
     [Header("Audio Clips")]
     [SerializeField]
     private AudioClip audioClipWalk; //걷기 사운드
     [SerializeField]
-    private AudioClip audioClipRun; // 달리기 사운드
+    private AudioClip audioClipRun; //달리기 사운드
 
     private RotateToMouse rotateToMouse; //마우스 이동 카메라 회전
-    private MovementCharacterController movement; // 키보드 입력 플레이어 이동, 점프
+    private MovementCharacterController movement; //키보드 입력 플레이어 이동, 점프
     private Status status; //이동속도 등 플렝이어 정보
-    private PlayerAnimatorController animator; // 애니메이션 재생 제어
+    private PlayerAnimatorController animator; //애니메이션 재생 제어
     private AudioSource audioSource; //사운드 재생 제어
     private WeaponAssaultRifle weapon; //무기를 이용한 공격 제어
 
@@ -35,13 +37,13 @@ public class PlayerController : MonoBehaviour
         weapon = GetComponentInChildren<WeaponAssaultRifle>();
     }
 
-    // Update is called once per frame
     private void Update()
     {
         UpdateRotate();
         UpdateMove();
         UpdateJump();
         UpdateWeaponAction();
+        UpdateReload();
     }
 
     private void UpdateRotate()
@@ -62,7 +64,7 @@ public class PlayerController : MonoBehaviour
         {
             bool isRun = false;
 
-            // 옆이나 뒤로 이동할 때는 달릴 수 없다
+            //옆이나 뒤로 이동할 때는 달릴 수 없다
             if (z > 0) isRun = Input.GetKey(keyCodeRun); //쉬프트를 누르면 isRun이 트루가 됨
 
             movement.MoveSpeed = isRun == true ? status.RunSpeed : status.WalkSpeed;
@@ -110,5 +112,14 @@ public class PlayerController : MonoBehaviour
         {
             weapon.StopWeaponAction();
         }
+    }
+
+    private void UpdateReload()
+    {
+        if (Input.GetKeyDown(keyCodeReload))
+        {
+            weapon.StartReload();
+        }
+        
     }
 }

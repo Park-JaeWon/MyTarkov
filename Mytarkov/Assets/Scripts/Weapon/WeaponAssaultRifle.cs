@@ -22,12 +22,17 @@ public class WeaponAssaultRifle : MonoBehaviour
     private AudioClip audioClipTakeOutWeapon; //무기 장착 사운드
     [SerializeField]
     private AudioClip audioClipFire; //공격 사운드
+    [SerializeField]
+    private AudioClip audioClipReload; //재장전 사운드
+    [SerializeField]
+    private AudioClip audioClipChamberReload; //약실재장전 사운드
 
     [Header("Weapon Setting")]
     [SerializeField]
     private WeaponSetting weaponSetting; //무기 설정
 
     private float lastAttackTime = 0; //마지막 발사시간 체크
+    private bool isReload = false;// 재장전 중인지 체크
 
     private AudioSource audioSource; //사운드 재생 컴포넌트
     private PlayerAnimatorController animator; //애니메이션 재생 제어
@@ -56,6 +61,8 @@ public class WeaponAssaultRifle : MonoBehaviour
 
     public void StartWeaponAction(int type = 0)
     {
+        //재장전 중 공격 불가
+        if (isReload == true) return; 
         //마우스 왼쪽 클릭 (공격 시작)
         if(type == 0)
         {
@@ -118,6 +125,45 @@ public class WeaponAssaultRifle : MonoBehaviour
             //탄피 생성
             casingMemoryPool.SpawnCasing(casingSpawnPoint.position, transform.right);
         }
+    }
+
+    private IEnumerator OnReload()
+    {
+        bool chamber = true; //약실에 탄 유무
+        isReload = true;
+        animator.OnReload();
+
+        if (chamber)
+            PlaySound(audioClipChamberReload);
+        else
+            PlaySound(audioClipReload);
+
+        while (true)
+        {
+            if (audioSource.isPlaying == false && animator.CurrentAnimIs("Movement"))
+            {
+                isReload = false;
+
+                if (weaponSetting.currentAmmo > 0) chamber = true;
+                animator.Ammo = chamber == true ? 1 : 0;
+
+                weaponSetting.currentAmmo = weaponSetting.maxAmmo;
+                onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
+
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    public void StartReload()
+    {
+        if (isReload == true) return;
+
+        StopWeaponAction();
+
+        StartCoroutine("OnReload");
     }
 
     private IEnumerator OnMuzzleFlashEffect()

@@ -32,7 +32,7 @@ public class MovementCharacterController : MonoBehaviour
         {
             moveForce.y += gravity * Time.deltaTime;
         }
-        //1초당 moveForce 속력으로 읻옹
+        //1초당 moveForce 속력으로 읻음
         characterController.Move(moveForce * Time.deltaTime);
     }
 
