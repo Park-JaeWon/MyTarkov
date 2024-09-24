@@ -4,10 +4,14 @@ using UnityEngine.Events;
 
 [System.Serializable]
 public class AmmoEvent : UnityEvent<int, int> { }
+[System.Serializable]
+public class MagazineEvent : UnityEvent<int> { }
 public class WeaponAssaultRifle : MonoBehaviour
 {
-    [HideInInspector]
+    [HideInInspector] //public변수인데 인스펙터창에 보이지 않게 한다.
     public AmmoEvent onAmmoEvent = new AmmoEvent();
+    [HideInInspector]
+    public MagazineEvent onMagazineEvent = new MagazineEvent();
 
     [Header("Fire Effects")]
     [SerializeField]
@@ -40,6 +44,8 @@ public class WeaponAssaultRifle : MonoBehaviour
 
     //외부에서 필요한 정보를 열람하기 위해 정의한 Get Property
     public WeaponName WeaponName => weaponSetting.weaponName;
+    public int CurrentMagazine => weaponSetting.currentMagazine;
+    public int MaxMagazine => weaponSetting.maxMagazine;
 
     private void Awake()
     {
@@ -49,6 +55,8 @@ public class WeaponAssaultRifle : MonoBehaviour
 
         //시작시 최대 탄수로 설정
         weaponSetting.currentAmmo = weaponSetting.maxAmmo;
+        //시작시 최대 탄창 수로 설정
+        weaponSetting.currentMagazine = weaponSetting.maxMagazine;
     }
 
     private void OnEnable()
@@ -57,6 +65,8 @@ public class WeaponAssaultRifle : MonoBehaviour
         muzzleFlashEffect.SetActive(false);
         //무기가 활성화될 때 해당 무기의 탄 수 정보를 갱신한다.
         onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
+        //탄창 정보 갱신
+        onMagazineEvent.Invoke(weaponSetting.currentMagazine);
     }
 
     public void StartWeaponAction(int type = 0)
@@ -129,11 +139,22 @@ public class WeaponAssaultRifle : MonoBehaviour
 
     private IEnumerator OnReload()
     {
-        bool chamber = true; //약실에 탄 유무
-        isReload = true;
+        bool reloadSound = false; //약실에 탄 유무
+        isReload = true; //장전 중
         animator.OnReload();
 
-        if (chamber)
+        if (weaponSetting.currentAmmo > 0)//탄약이 남아있으면
+        {
+            animator.Ammo = 0;//노리쇠 후퇴고정X 애니메이션 및 사운드
+            reloadSound = false;
+        }
+        else // 탄약이 0이면
+        {
+            animator.Ammo = 1;//노리쇠 후퇴고정O
+            reloadSound = true;
+        }
+
+        if (reloadSound)
             PlaySound(audioClipChamberReload);
         else
             PlaySound(audioClipReload);
@@ -144,8 +165,8 @@ public class WeaponAssaultRifle : MonoBehaviour
             {
                 isReload = false;
 
-                if (weaponSetting.currentAmmo > 0) chamber = true;
-                animator.Ammo = chamber == true ? 1 : 0;
+                weaponSetting.currentMagazine--;
+                onMagazineEvent.Invoke(weaponSetting.currentMagazine);
 
                 weaponSetting.currentAmmo = weaponSetting.maxAmmo;
                 onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
@@ -159,7 +180,8 @@ public class WeaponAssaultRifle : MonoBehaviour
 
     public void StartReload()
     {
-        if (isReload == true) return;
+        //재장전 중이거나 탄창수가 0이면 재장전 불가능
+        if (isReload == true || weaponSetting.currentMagazine <= 0) return;
 
         StopWeaponAction();
 
