@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 [System.Serializable]
 public class AmmoEvent : UnityEvent<int, int> { }
@@ -20,6 +21,8 @@ public class WeaponAssaultRifle : MonoBehaviour
     [Header("Spawn Points")]
     [SerializeField]
     private Transform casingSpawnPoint; //탄피 생성 위치
+    [SerializeField]
+    private Transform bulletSpawnPoint; //총알 생성 위치
 
     [Header("Audio Clips")]
     [SerializeField]
@@ -35,12 +38,22 @@ public class WeaponAssaultRifle : MonoBehaviour
     [SerializeField]
     private WeaponSetting weaponSetting; //무기 설정
 
+    [Header("Aim UI")]
+    [SerializeField]
+    private Image imageAim; //모드에 따라 Aim 이미지 활성 비활성
+
     private float lastAttackTime = 0; //마지막 발사시간 체크
-    private bool isReload = false;// 재장전 중인지 체크
+    private bool isReload = false;//재장전 중인지 체크
+    private bool isAttack = false;//공격 여부 체크
+    private bool isModeChange = false;//모드 전환 체크
+    private float defaultModeFOV = 60;//기본 모드 카메라 FOV
+    private float aimModeFOV = 30;//AIM모드 카메라 FOV
 
     private AudioSource audioSource; //사운드 재생 컴포넌트
     private PlayerAnimatorController animator; //애니메이션 재생 제어
     private CasingMemoryPool casingMemoryPool; //탄피 생성 후 활성/비활성 관리
+    private ImpactMemoryPool impactMemoryPool; //공격 효과 생성 후 활성/비활성 관리
+    private Camera mainCamera; //레이 발사
 
     //외부에서 필요한 정보를 열람하기 위해 정의한 Get Property
     public WeaponName WeaponName => weaponSetting.weaponName;
@@ -52,6 +65,8 @@ public class WeaponAssaultRifle : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
         animator = GetComponentInParent<PlayerAnimatorController>();
         casingMemoryPool = GetComponent<CasingMemoryPool>();
+        impactMemoryPool = GetComponent<ImpactMemoryPool>();
+        mainCamera = Camera.main;
 
         //시작시 최대 탄수로 설정
         weaponSetting.currentAmmo = weaponSetting.maxAmmo;
@@ -67,18 +82,25 @@ public class WeaponAssaultRifle : MonoBehaviour
         onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
         //탄창 정보 갱신
         onMagazineEvent.Invoke(weaponSetting.currentMagazine);
+
+        ResetVariables();
     }
 
     public void StartWeaponAction(int type = 0)
     {
         //재장전 중 공격 불가
-        if (isReload == true) return; 
+        if (isReload == true) return;
+
+        //모드 전환중 공격 X
+        if (isModeChange == true) return;
+
         //마우스 왼쪽 클릭 (공격 시작)
         if(type == 0)
         {
             //연발
             if(weaponSetting.isAutomaticAttack == true)
             {
+                isAttack = true;
                 StartCoroutine("OnAttackLoop");
             }
             //단발
@@ -87,6 +109,14 @@ public class WeaponAssaultRifle : MonoBehaviour
                 OnAttack();
             }
         }
+        //마우스 오른쪽 클릭 (모드 전환)
+        else
+        {
+            //공격 중 모드 전환 X
+            if (isAttack == true) return;
+
+            StartCoroutine("OnModeChange");
+        }
     }
 
     public void StopWeaponAction(int type = 0)
@@ -94,6 +124,7 @@ public class WeaponAssaultRifle : MonoBehaviour
         //마우스 왼쪽 클릭 (공격 종료)
         if(type == 0)
         {
+            isAttack = false;
             StopCoroutine("OnAttackLoop");
         }
     }
@@ -125,12 +156,20 @@ public class WeaponAssaultRifle : MonoBehaviour
             {
                 return;
             }
+            //레이를 발사해 원하는 위치 공격 (Impact Effect)
+            TwoStepRaycast();
 
             weaponSetting.currentAmmo--;
-            onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
+            onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo); //UI 정보 갱신
 
-            animator.Play("Fire", -1, 0);
-            StartCoroutine("OnMuzzleFlashEffect");
+            //모드에 따라 AimFire or Fire 애니메이션 재생
+            //animator.Play("Fire", -1, 0);
+            string anim = animator.AimModeIs == true ? "AimFire" : "Fire";
+            animator.Play(anim, -1, 0);
+
+            //총구 이펙트 재생
+            if (animator.AimModeIs == false) StartCoroutine("OnMuzzleFlashEffect");
+            //공격 사운드 재생
             PlaySound(audioClipFire);
             //탄피 생성
             casingMemoryPool.SpawnCasing(casingSpawnPoint.position, transform.right);
@@ -202,5 +241,81 @@ public class WeaponAssaultRifle : MonoBehaviour
         audioSource.Stop();         //기존 사운드 정지
         audioSource.clip = clip;    //새로운 사운드 clip으로 교체
         audioSource.Play();         //재생
+    }
+
+    private void TwoStepRaycast()
+    {
+        Ray ray;
+        RaycastHit hit;
+        Vector3 targetPoint = Vector3.zero;
+
+        //화면 중앙 좌표 (Aim기준으로 Raycast연산)
+        ray = mainCamera.ViewportPointToRay(Vector2.one * 0.5f);
+        //공격 사거리(attackDistance)안에 부딪히는 오브젝트가 있으면 targetPoint는 광선에 부딪힌 위치
+        if(Physics.Raycast(ray, out hit, weaponSetting.attackDistance))
+        {
+            targetPoint = hit.point;
+        }
+        //공격 사거리 안에 부딪히는 오브젝트가 없으면 targetPoint는 최대 사거리 위치
+        else
+        {
+            targetPoint = ray.origin + ray.direction * weaponSetting.attackDistance;
+        }
+        //Debug.DrawRay(ray.origin, ray.direction * weaponSetting.attackDistance, Color.red);
+
+        //첫번째 Raycast연산으로 얻어진 targetPoint를 목표지점으로 설정하고
+        //총구를 시작지점으로 하여 Raycast 연산
+        Vector3 attackDirection = (targetPoint - bulletSpawnPoint.position).normalized;
+        if(Physics.Raycast(bulletSpawnPoint.position, attackDirection, out hit, weaponSetting.attackDistance))
+        {
+            impactMemoryPool.SpawnImpact(hit);
+
+            if(hit.transform.CompareTag("ImpactEnemy"))//광선에 부딪힌 오브젝트의 태그가 ImpactEnemy이면
+            {
+                hit.transform.GetComponent<EnemyFSM>().TakeDamage(weaponSetting.damage);
+                
+            }
+            else if(hit.transform.CompareTag("ImpactEnemy_Sniper"))
+            {
+                hit.transform.GetComponent<EnemyFSM_Sniper>().Sniper_TakeDamage(weaponSetting.damage);
+            }
+            
+        }
+        //Debug.DrawRay(bulletSpawnPoint.position, attackDirection * weaponSetting.attackDistance, Color.blue);
+    }
+
+    private IEnumerator OnModeChange()
+    {
+        float current = 0;
+        float percent = 0;
+        float time = 0.35f;
+
+        animator.AimModeIs = !animator.AimModeIs;
+        imageAim.enabled = !imageAim.enabled;
+
+        float start = mainCamera.fieldOfView;
+        float end = animator.AimModeIs == true ? aimModeFOV : defaultModeFOV;
+
+        isModeChange = true;
+
+        while ( percent < 1 )
+        {
+            current += Time.deltaTime;
+            percent = current / time;
+
+            //모드에 따라 카메라의 시야각 변경
+            mainCamera.fieldOfView = Mathf.Lerp(start, end, percent);
+
+            yield return null;
+        }
+
+        isModeChange = false;
+    }
+
+    private void ResetVariables()
+    {
+        isReload = false;
+        isAttack = false;
+        isModeChange = false;
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(CharacterController))]
 public class MovementCharacterController : MonoBehaviour
@@ -10,7 +11,7 @@ public class MovementCharacterController : MonoBehaviour
     [SerializeField]
     private float jumpForce; //점프 힘
     [SerializeField]
-    private float gravity; //중력 계수
+    private float gravity; //중력 계수using UnityEngine.UI;
     
     public float MoveSpeed
     {
@@ -50,6 +51,14 @@ public class MovementCharacterController : MonoBehaviour
         if(characterController.isGrounded)
         {
             moveForce.y = jumpForce;
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Escape"))
+        {
+            Debug.Log("Escape");
         }
     }
 }

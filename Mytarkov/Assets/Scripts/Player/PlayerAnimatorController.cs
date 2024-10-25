@@ -23,6 +23,12 @@ public class PlayerAnimatorController : MonoBehaviour
         get => animator.GetFloat("Ammo");
     }
 
+    public bool AimModeIs
+    {
+        set => animator.SetBool("isAimMode", value);
+        get => animator.GetBool("isAimMode");
+    }
+
     public void Play(string stateName, int layer, float normalizedTime)
     {
         animator.Play(stateName, layer, normalizedTime);

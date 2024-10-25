@@ -112,6 +112,15 @@ public class PlayerController : MonoBehaviour
         {
             weapon.StopWeaponAction();
         }
+
+        if(Input.GetMouseButtonDown(1))
+        {
+            weapon.StartWeaponAction(1);
+        }
+        else if(Input.GetMouseButtonUp(1))
+        {
+            weapon.StopWeaponAction(1);
+        }
     }
 
     private void UpdateReload()
@@ -120,6 +129,15 @@ public class PlayerController : MonoBehaviour
         {
             weapon.StartReload();
         }
-        
+    }
+    
+    public void TakeDamage(int damage)
+    {
+        bool isDie = status.DecreseHP(damage);
+
+        if(isDie == true)
+        {
+            Debug.Log("GameOver");
+        }
     }
 }

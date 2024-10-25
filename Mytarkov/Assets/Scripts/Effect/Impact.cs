@@ -13,6 +13,7 @@ public class Impact : MonoBehaviour
     public void Setup(MemoryPool pool)
     {
         memoryPool = pool;
+
     }
 
     private void Update()
